@@ -3,7 +3,7 @@
 # Author: jorgh
 #
 """
-<plugin key="Onkyo" name="Onkyo AV Receiver" author="jorgh" version="0.1.0">
+<plugin key="Onkyo" name="Onkyo AV Receiver" author="jorgh" version="0.1.1">
   <params>
     <param field="Mode6" label="Debug" width="75px">
       <options>
@@ -45,6 +45,7 @@ ZONE2SOURCE = 7
 ZONE2VOLUME = 8
 UDP_PORT = 60128
 EOF = 23
+NA = -1
 
 class Onkyo:
   enabled = False
@@ -508,9 +509,13 @@ class Onkyo:
           #Unmute
           UpdateDevice(MAINVOLUME, 1, "On")
       if (streISCPData=='!1MVL'):
-        intVolume = int(int('0x'+streISCPMessage, 16)*(100/self.intMainMaxVolume))
-        Domoticz.Log('Volume: '+str(intVolume))
-        UpdateDevice(MAINVOLUME,2,str(intVolume))
+        if streISCPMessage == 'N/A':
+          intVolume = NA
+        else:
+          intVolume = int(int('0x'+streISCPMessage, 16)*(100/self.intMainMaxVolume))
+        if (intVolume != NA):
+          Domoticz.Log('Volume: '+str(intVolume))
+          UpdateDevice(MAINVOLUME,2,str(intVolume))
       if (streISCPData=='!1SLI'):
         if (self.blDebug ==  True):
           Domoticz.Log('Source: '+streISCPMessage)
@@ -535,11 +540,12 @@ class Onkyo:
           UpdateDevice(ZONE2VOLUME, 1, "On")
       if (streISCPData=='!1ZVL'):
         if streISCPMessage == 'N/A':
-          intVolume = 0
+          intVolume = NA
         else:
           intVolume = int(int('0x'+streISCPMessage, 16)*(100/self.intZone2MaxVolume))
-        Domoticz.Log('Zone2 volume: '+str(intVolume))
-        UpdateDevice(ZONE2VOLUME,2,str(intVolume))
+        if (intVolume != NA):
+          Domoticz.Log('Zone2 volume: '+str(intVolume))
+          UpdateDevice(ZONE2VOLUME,2,str(intVolume))
       if (streISCPData=='!1SLZ'):
         if (self.blDebug ==  True):
           Domoticz.Log('Zone 2 source: '+streISCPMessage)
