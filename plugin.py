@@ -3,7 +3,7 @@
 # Author: jorgh
 #
 """
-<plugin key="Onkyo" name="Onkyo AV Receiver" author="jorgh" version="0.1.1">
+<plugin key="Onkyo" name="Onkyo AV Receiver" author="jorgh" version="0.1.1" wikilink="https://github.com/jorgh6/domoticz-onkyo-plugin/wiki" externallink="https://github.com/jorgh6/domoticz-onkyo-plugin">
   <params>
     <param field="Mode6" label="Debug" width="75px">
       <options>
@@ -135,7 +135,7 @@ class Onkyo:
         Domoticz.Log('Main Source Selected: '+strSelectedName)
       for selector in self.XMLRoot.find('device').find('selectorlist'):
         if (selector.get('name')==strSelectedName):
-          strId = selector.get('id') 
+          strId = selector.get('id').upper()
           Domoticz.Send(Message=createISCPFrame(MESSAGE_SOURCE+strId))
 
     if (Unit==MAINLISTENINGMODE):
@@ -194,7 +194,7 @@ class Onkyo:
       Domoticz.Log('Zone 2 Source Selected: '+strSelectedName)
       for selector in self.XMLRoot.find('device').find('selectorlist'):
         if (selector.get('name')==strSelectedName):
-          strId = selector.get('id')
+          strId = selector.get('id').upper()
           Domoticz.Send(Message=createISCPFrame(MESSAGE_SOURCE2+strId))
 
   def onNotification(self, Name, Subject, Text, Status, Priority, Sound, ImageFile):
@@ -486,10 +486,10 @@ class Onkyo:
       if (self.blDebug ==  True):
         Domoticz.Log('Version: ' + str(intVersion))
         Domoticz.Log('Reserved: [' + hex(self.bInputBuffer[13])+']['+ hex(self.bInputBuffer[14])+']['+ hex(self.bInputBuffer[15])+']')
-      streISCPData = self.bInputBuffer[16:21].decode()
+      streISCPData = self.bInputBuffer[16:21].decode(encoding="ascii", errors="ignore")
       if (self.blDebug ==  True):
         Domoticz.Log('eISCP Data : ' + streISCPData)
-      streISCPMessage = self.bInputBuffer[21: self.bInputBuffer[21:].find(EOF)-2].decode()
+      streISCPMessage = self.bInputBuffer[21: self.bInputBuffer[21:].find(EOF)-2].decode(encoding="ascii", errors="ignore")
       if (self.blDebug ==  True):
         Domoticz.Log('eISCP Message: ' + streISCPMessage)
       self.bInputBuffer = self.bInputBuffer[16+intDataSize:]  # Remove this frame from the InputBuffer
@@ -520,7 +520,7 @@ class Onkyo:
         if (self.blDebug ==  True):
           Domoticz.Log('Source: '+streISCPMessage)
         for selector in self.XMLRoot.find('device').find('selectorlist'):
-          if (selector.get('id')==streISCPMessage):
+          if (selector.get('id').upper() == streISCPMessage.upper()):
             Domoticz.Log('Current Source: '+selector.get('name'))
             setSelectorByName(MAINSOURCE, selector.get('name'))
       if (streISCPData=='!1ZPW'):
@@ -550,14 +550,14 @@ class Onkyo:
         if (self.blDebug ==  True):
           Domoticz.Log('Zone 2 source: '+streISCPMessage)
         for selector in self.XMLRoot.find('device').find('selectorlist'):
-          if (selector.get('id')==streISCPMessage):
+          if (selector.get('id').upper() == streISCPMessage.upper()):
             Domoticz.Log('Zone 2 Current Source: '+selector.get('name'))
             setSelectorByName(ZONE2SOURCE, selector.get('name'))
       if (streISCPData=='!1PRS'):
         if (self.blDebug ==  True):
           Domoticz.Log('Preset: '+streISCPMessage)
         for preset in self.XMLRoot.find('device').find('presetlist'):
-          if (preset.get('id').upper() == streISCPMessage):
+          if (preset.get('id').upper() == streISCPMessage.upper()):
             strPresetName = str(int('0x'+preset.get('id'),16))+' '+preset.get('name')
             setSelectorByName(TUNERPRESETS, strPresetName)
  
