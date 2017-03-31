@@ -3,7 +3,7 @@
 # Author: jorgh
 #
 """
-<plugin key="Onkyo" name="Onkyo AV Receiver" author="jorgh" version="0.1.1" wikilink="https://github.com/jorgh6/domoticz-onkyo-plugin/wiki" externallink="https://github.com/jorgh6/domoticz-onkyo-plugin">
+<plugin key="Onkyo" name="Onkyo AV Receiver" author="jorgh" version="0.1.2" wikilink="https://github.com/jorgh6/domoticz-onkyo-plugin/wiki" externallink="https://github.com/jorgh6/domoticz-onkyo-plugin">
   <params>
     <param field="Mode6" label="Debug" width="75px">
       <options>
@@ -240,6 +240,7 @@ class Onkyo:
     self.sockUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     self.sockUDP.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     self.sockUDP.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    self.sockUDP.settimeout(0.1)
     self.sockUDP.bind(('0.0.0.0', 60128))
     self.blDiscoverySocketCreated = True
     if (self.blDebug ==  True):
@@ -264,7 +265,7 @@ class Onkyo:
     blNothingReceived = False
     while blNothingReceived != True: # Repeat this until we have no data left
       try:
-        data, addr = self.sockUDP.recvfrom(BUFFER_SIZE, socket.MSG_DONTWAIT)
+        data, addr = self.sockUDP.recvfrom(BUFFER_SIZE)
         strData = str(data,'utf-8')
       except:
         strData = ''
