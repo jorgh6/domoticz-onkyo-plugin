@@ -3,7 +3,7 @@
 # Author: jorgh
 #
 """
-<plugin key="Onkyo" name="Onkyo AV Receiver" author="jorgh" version="0.1.2" wikilink="https://github.com/jorgh6/domoticz-onkyo-plugin/wiki" externallink="https://github.com/jorgh6/domoticz-onkyo-plugin">
+<plugin key="Onkyo" name="Onkyo AV Receiver" author="jorgh" version="0.1.3" wikilink="https://github.com/jorgh6/domoticz-onkyo-plugin/wiki" externallink="https://github.com/jorgh6/domoticz-onkyo-plugin">
   <params>
     <param field="Mode6" label="Debug" width="75px">
       <options>
@@ -207,6 +207,8 @@ class Onkyo:
     self.blDiscoverySocketCreated = False    # We reset the status to it's initial settings to start all over again.
     self.blDiscoveryRequestSend = False
     self.blDiscoverySucces = False
+    self.blConnectInitiated = False
+    self.blConnected = False
     self.blCheckedDevices = False
     self.blInitDone = False
 
@@ -218,7 +220,7 @@ class Onkyo:
     if (self.blDiscoveryRequestSend == True and self.blDiscoverySucces == False):
       self.procesDiscoveryData()
       if (self.blDiscoverySucces == False):
-        self.blDiscoveryRequestSend == False     # Resend Discovery frame
+        self.blDiscoveryRequestSend = False     # Resend Discovery frame
     if (self.blDiscoveryRequestSend == False and self.blDiscoverySocketCreated == True): # If the discovery UDP packet has not been send, send it now
       self.sendDiscoveryRequest()
     if (self.blConnectInitiated == False and self.blDiscoverySucces == True):
@@ -229,10 +231,8 @@ class Onkyo:
       self.checkDevices()
     if (self.blCheckedDevices == True and self.blCheckedStates == False):
       self.getInitialStates()
-
       self.blInitDone = True
       Domoticz.Heartbeat(20)
-      Domoticz.Send(Message=createISCPFrame(MESSAGE_SOURCE+'QSTN'))
 
   def createUDPSocket(self):
     if (self.blDebug ==  True):
