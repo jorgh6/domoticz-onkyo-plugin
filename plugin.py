@@ -3,12 +3,12 @@
 # Author: jorgh
 #
 """
-<plugin key="Onkyo" name="Onkyo AV Receiver" author="jorgh" version="0.1.3" wikilink="https://github.com/jorgh6/domoticz-onkyo-plugin/wiki" externallink="https://github.com/jorgh6/domoticz-onkyo-plugin">
+<plugin key="Onkyo" name="Onkyo AV Receiver" author="jorgh" version="0.2.0" wikilink="https://github.com/jorgh6/domoticz-onkyo-plugin/wiki" externallink="https://github.com/jorgh6/domoticz-onkyo-plugin">
   <params>
     <param field="Mode6" label="Debug" width="75px">
       <options>
         <option label="True" value="Debug"/>
-        <option label="False" value="Normal"  default="true" />
+        <option label="False" value="Normal"  default="True" />
       </options>
     </param>
   </params>
@@ -49,6 +49,7 @@ NA = -1
 
 class Onkyo:
   enabled = False
+  objConnection = None
 
   def __init__(self):
     self.blDiscoverySocketCreated = False    # Has the UDP socket for the Onkyo discovery protocol been created.
@@ -74,6 +75,7 @@ class Onkyo:
   def onStart(self):
     if Parameters["Mode6"] == "Debug":
       self.blDebug = True
+      Domoticz.Debugging(1)
     
     if (self.blDebug ==  True):
       Domoticz.Log("Onkyo: onStart called")
@@ -83,12 +85,12 @@ class Onkyo:
     if (self.blDebug ==  True):
       Domoticz.Log("Onkyo: onStop called")
 
-  def onConnect(self, Status, Description):
+  def onConnect(self, Connection, Status, Description):
     if (self.blDebug ==  True):
       Domoticz.Log("onConnect called")
     self.blConnected = True                 # We are now connected
 
-  def onMessage(self, Data, Status, Extra):
+  def onMessage(self, Connection, Data, Status, Extra):
     if (self.blDebug ==  True):
       Domoticz.Log("onMessage called")
       Domoticz.Log("We received "+str(len(Data))+" bytes of data")
@@ -97,9 +99,6 @@ class Onkyo:
       if (self.blDebug ==  True):
         Domoticz.Log('We have a eISCP frame to process')
       self.processeISCPFrame()
-    else:
-      if (self.blDebug ==  True):
-        Domoticz.Log('No eISCP frame found')
 
   def onCommand(self, Unit, Command, Level, Hue):
     if (self.blDebug ==  True):
@@ -108,9 +107,9 @@ class Onkyo:
     if (Unit==MAINPOWER):
       # Main Power
       if str(Command)=='On':
-        Domoticz.Send(Message=createISCPFrame(MESSAGE_POWER+'01'))
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_POWER+'01'))
       if str(Command)=='Off':
-        Domoticz.Send(Message=createISCPFrame(MESSAGE_POWER+'00'))
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_POWER+'00'))
 
     if (Unit==MAINVOLUME):
       # Main Volume
@@ -118,13 +117,13 @@ class Onkyo:
         strVolume = hex(int((self.intMainMaxVolume/100)*Level))[2:]
         if len(strVolume) == 1:
           strVolume = '0'+strVolume
-        Domoticz.Send(Message=createISCPFrame(MESSAGE_VOLUME+strVolume))
+        self.ObjConnection.Send(Message=createISCPFrame(MESSAGE_VOLUME+strVolume))
       if (Command=='On'):
-        Domoticz.Send(Message=createISCPFrame(MESSAGE_MUTE+'00'))
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_MUTE+'00'))
         #Unmute
       if (Command=='Off'):
         #Mute
-        Domoticz.Send(Message=createISCPFrame(MESSAGE_MUTE+'01'))
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_MUTE+'01'))
 
     if (Unit==MAINSOURCE):
       #Input Selector
@@ -136,7 +135,7 @@ class Onkyo:
       for selector in self.XMLRoot.find('device').find('selectorlist'):
         if (selector.get('name')==strSelectedName):
           strId = selector.get('id').upper()
-          Domoticz.Send(Message=createISCPFrame(MESSAGE_SOURCE+strId))
+          self.objConnection.Send(Message=createISCPFrame(MESSAGE_SOURCE+strId))
 
     if (Unit==MAINLISTENINGMODE):
       #Listening Mode Selector
@@ -148,7 +147,7 @@ class Onkyo:
       for selector in self.XMLRoot.find('device').find('controllist'):
         if (selector.get('id')=='LMD '+strSelectedName):
           strCode = selector.get('code')
-          Domoticz.Send(Message=createISCPFrame(MESSAGE_LISTENINGMODE+strCode))
+          self.objConnection.Send(Message=createISCPFrame(MESSAGE_LISTENINGMODE+strCode))
 
     if (Unit==TUNERPRESETS):
       #Tuner Preset Selector
@@ -163,14 +162,14 @@ class Onkyo:
       strTunerPreset = hex(intTunerPreset)[2:]
       if len(strTunerPreset) == 1:
         strTunerPreset = '0'+strTunerPreset
-      Domoticz.Send(Message=createISCPFrame(MESSAGE_TUNERPRESET+strTunerPreset))
+      self.objConnection.Send(Message=createISCPFrame(MESSAGE_TUNERPRESET+strTunerPreset))
 
     if (Unit==ZONE2POWER):
       # Zone2 Power
       if str(Command)=='On':
-        Domoticz.Send(Message=createISCPFrame(MESSAGE_POWER2+'01'))
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_POWER2+'01'))
       if str(Command)=='Off':
-        Domoticz.Send(Message=createISCPFrame(MESSAGE_POWER2+'00'))
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_POWER2+'00'))
 
     if (Unit==ZONE2VOLUME):
       # Zone 2 Volume
@@ -178,13 +177,13 @@ class Onkyo:
         strVolume = hex(int((self.intZone2MaxVolume/100)*Level))[2:]
         if len(strVolume) == 1:
           strVolume = '0'+strVolume
-        Domoticz.Send(Message=createISCPFrame(MESSAGE_VOLUME2+strVolume))
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_VOLUME2+strVolume))
       if (Command=='On'):
-        Domoticz.Send(Message=createISCPFrame(MESSAGE_MUTE2+'00'))
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_MUTE2+'00'))
         #Unmute
       if (Command=='Off'):
         #Mute
-        Domoticz.Send(Message=createISCPFrame(MESSAGE_MUTE2+'01'))
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_MUTE2+'01'))
 
     if (Unit==ZONE2SOURCE):
       #Zone 2 input Selector
@@ -195,13 +194,13 @@ class Onkyo:
       for selector in self.XMLRoot.find('device').find('selectorlist'):
         if (selector.get('name')==strSelectedName):
           strId = selector.get('id').upper()
-          Domoticz.Send(Message=createISCPFrame(MESSAGE_SOURCE2+strId))
+          self.objConnection.Send(Message=createISCPFrame(MESSAGE_SOURCE2+strId))
 
   def onNotification(self, Name, Subject, Text, Status, Priority, Sound, ImageFile):
     if (self.blDebug ==  True):
       Domoticz.Log("Onkyo: Notification: " + Name + "," + Subject + "," + Text + "," + Status + "," + str(Priority) + "," + Sound + "," + ImageFile)
 
-  def onDisconnect(self):
+  def onDisconnect(self, Connection):
     if (self.blDebug ==  True):
       Domoticz.Log("onDisconnect called")
     self.blDiscoverySocketCreated = False    # We reset the status to it's initial settings to start all over again.
@@ -420,28 +419,30 @@ class Onkyo:
   def getInitialStates(self):
     for zone in self.XMLRoot.find('device').find('zonelist'):
       if (int(zone.get('id'))==1) and (int(zone.get('value'))==1):
-        Domoticz.Send(Message=createISCPFrame(MESSAGE_POWER+'QSTN'), Delay=1)
-        Domoticz.Send(Message=createISCPFrame(MESSAGE_VOLUME+'QSTN'), Delay=2)
-        Domoticz.Send(Message=createISCPFrame(MESSAGE_SOURCE+'QSTN'), Delay=3)
-        Domoticz.Send(Message=createISCPFrame(MESSAGE_TUNERPRESET+'QSTN'), Delay=4)
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_POWER+'QSTN'), Delay=1)
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_VOLUME+'QSTN'), Delay=2)
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_SOURCE+'QSTN'), Delay=3)
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_TUNERPRESET+'QSTN'), Delay=4)
       if (int(zone.get('id'))==2) and (int(zone.get('value'))==1):
-        Domoticz.Send(Message=createISCPFrame(MESSAGE_POWER2+'QSTN'), Delay=5)
-        Domoticz.Send(Message=createISCPFrame(MESSAGE_VOLUME2+'QSTN'), Delay=6)
-        Domoticz.Send(Message=createISCPFrame(MESSAGE_SOURCE2+'QSTN'), Delay=7)
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_POWER2+'QSTN'), Delay=5)
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_VOLUME2+'QSTN'), Delay=6)
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_SOURCE2+'QSTN'), Delay=7)
     self.blCheckedStates = True
     
 
   def connect(self):
     if (self.blDebug ==  True):
       Domoticz.Log("Connecting to Receiver")
-    Domoticz.Transport(Transport="TCP/IP", Address=self.strIPAddress, Port=self.strPort)
-    Domoticz.Protocol("None")
-    Domoticz.Connect()
+    self.objConnection = Domoticz.Connection(Name="Onkyo Connection", Transport="TCP/IP", Protocol="NONE", Address=self.strIPAddress, Port=self.strPort)
+    self.objConnection.Connect()
+#    Domoticz.Transport(Transport="TCP/IP", Address=self.strIPAddress, Port=self.strPort)
+#    Domoticz.Protocol("None")
+#    Domoticz.Connect()
     self.blConnectInitiated =  True
 
   def workAround(self):
     Domoticz.Log("Loading XML from file")
-    Domoticz.Send(Message=createISCPFrame(MESSAGE_RECEIVER_INFORMATION))
+    self.objConnection.Send(Message=createISCPFrame(MESSAGE_RECEIVER_INFORMATION))
     try: 
       f = open('XMLDataFile.xml', 'r')            # We do exactly the same here as in the processeISCPFrame function
       strXML = f.read()                           # However, now it does not cause Domoticz to lock up
@@ -561,12 +562,30 @@ class Onkyo:
           if (preset.get('id').upper() == streISCPMessage.upper()):
             strPresetName = str(int('0x'+preset.get('id'),16))+' '+preset.get('name')
             setSelectorByName(TUNERPRESETS, strPresetName)
- 
+
+      if (streISCPData=='!1LMD'):
+        if (self.blDebug ==  True):
+          Domoticz.Log('Listening mode: '+streISCPMessage)
+        if (streISCPMessage != 'N/A'):
+          blLMDFound = False
+          for control in self.XMLRoot.find('device').find('controllist'):
+            if (control.get('id')[0:3] == 'LMD'):
+              Domoticz.Log('EISCP message: '+ streISCPMessage)
+              Domoticz.Log('XML code: '+ control.get('code'))
+              if (control.get('code').upper() == streISCPMessage.upper()):
+               strListeningModeName = control.get('id')[4:]
+               setSelectorByName(MAINLISTENINGMODE, strListeningModeName)
+               blLMDFound = True
+          if (blLMDFound == False):
+            if (setSelectorByCode(MAINLISTENINGMODE, streISCPMessage.upper()) == False):
+              addListeningMode(streISCPMessage.upper())
+              setSelectorByCode(MAINLISTENINGMODE, streISCPMessage.upper())
+  
       if (streISCPData=='!1NRI'):
         # We should now have the XML
         Domoticz.Log('Received XML')
         strXML = streISCPMessage[streISCPMessage.find('<'):streISCPMessage.rfind('>')+1]
-        # self.XMLRoot = XMLTree.fromstring(strXML) # <-- This statement causes Domoticz to lock up, donÂ´t know why
+        # self.XMLRoot = XMLTree.fromstring(strXML) # <-- This statement causes Domoticz to lock up, don´t know why
         f = open('XMLDataFile.xml', 'w')            # So instead I write it to a file
         f.write(strXML)
         f.close()
@@ -574,7 +593,7 @@ class Onkyo:
         #strXML2 = f.read()                         # However I do the same in the workaround, and then it does not lock up
         #f.close()                                  # If anyone knows what causes this behaviour, drop me a line
         #self.XMLRoot = XMLTree.fromstring(strXML2) # <-- This statement causes Domoticz to lock up
-        #self.ProcessXML()     
+        #self.ProcessXML()
     else:
       if (self.blDebug ==  True):
         Domoticz.Log('NON eISCP data found: ' + data)
@@ -615,13 +634,13 @@ def onStop():
     global _plugin
     _plugin.onStop()
 
-def onConnect(Status, Description):
+def onConnect(Connection, Status, Description):
     global _plugin
-    _plugin.onConnect(Status, Description)
+    _plugin.onConnect(Connection, Status, Description)
 
-def onMessage(Data, Status, Extra):
+def onMessage(Connection, Data, Status, Extra):
     global _plugin
-    _plugin.onMessage(Data, Status, Extra)
+    _plugin.onMessage(Connection, Data, Status, Extra)
 
 def onCommand(Unit, Command, Level, Hue):
     global _plugin
@@ -631,9 +650,9 @@ def onNotification(Name, Subject, Text, Status, Priority, Sound, ImageFile):
     global _plugin
     _plugin.onNotification(Name, Subject, Text, Status, Priority, Sound, ImageFile)
 
-def onDisconnect():
+def onDisconnect(Connection):
     global _plugin
-    _plugin.onDisconnect()
+    _plugin.onDisconnect(Connection)
 
 def onHeartbeat():
     global _plugin
@@ -673,3 +692,38 @@ def setSelectorByName(intId, strName):
     if strLevelName == strName:
       Devices[intId].Update(1,str(intLevel))
     intLevel += 10
+
+def setSelectorByCode(intId, strCode):
+  Domoticz.Log("Onkyo: setSelectorByCode code: "+strCode)
+  dictOptions = Devices[intId].Options
+  Domoticz.Log("Onkyo: Fetched Options")
+  Domoticz.Log("Onkyo: options: "+dictOptions['LevelNames'])
+  listLevelNames = dictOptions['LevelNames'].split('|')
+  intLevel = 0
+  Domoticz.Log("Onkyo: Starting Loop")
+  for strLevelName in listLevelNames:
+    Domoticz.Log(strLevelName[1:3])
+    if strLevelName[1:3] == strCode:
+      Domoticz.Log("Onkyo: found level: +"+str(intLevel))
+      Devices[intId].Update(1,str(intLevel))
+      return True
+    intLevel += 10
+  return False
+
+def addListeningMode(strCode):
+  nValue = Devices[MAINLISTENINGMODE].nValue
+  sValue = Devices[MAINLISTENINGMODE].sValue
+  dictOptions = Devices[MAINLISTENINGMODE].Options 
+  Domoticz.Log(dictOptions["LevelActions"])
+  Domoticz.Log(dictOptions["LevelNames"])
+  dictOptions["LevelNames"] = dictOptions["LevelNames"]+'|['+strCode+']'+' New'
+  dictOptions["LevelActions"] = dictOptions["LevelActions"]+'|'
+  Domoticz.Log(dictOptions["LevelActions"])
+  Domoticz.Log(dictOptions["LevelNames"])
+
+  Devices[MAINLISTENINGMODE].Update(nValue = nValue, sValue = sValue, Options = dictOptions) 
+
+#  Domoticz.Device(Name=(self.XMLRoot.find('device')).find('model').text + \
+#            ' ' + zone.get('name') + " Mode", Unit=MAINLISTENINGMODE, \
+#            TypeName="Selector Switch", Switchtype=18, Image=5, \
+#            Options = dictOptions).Create()
