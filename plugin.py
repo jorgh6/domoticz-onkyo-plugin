@@ -3,7 +3,7 @@
 # Author: jorgh
 #
 """
-<plugin key="Onkyo" name="Onkyo AV Receiver" author="jorgh" version="0.2.0" wikilink="https://github.com/jorgh6/domoticz-onkyo-plugin/wiki" externallink="https://github.com/jorgh6/domoticz-onkyo-plugin">
+<plugin key="Onkyo" name="Onkyo AV Receiver" author="jorgh" version="0.2.1" wikilink="https://github.com/jorgh6/domoticz-onkyo-plugin/wiki" externallink="https://github.com/jorgh6/domoticz-onkyo-plugin">
   <params>
     <param field="Mode6" label="Debug" width="75px">
       <options>
@@ -117,7 +117,7 @@ class Onkyo:
         strVolume = hex(int((self.intMainMaxVolume/100)*Level))[2:]
         if len(strVolume) == 1:
           strVolume = '0'+strVolume
-        self.ObjConnection.Send(Message=createISCPFrame(MESSAGE_VOLUME+strVolume))
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_VOLUME+strVolume))
       if (Command=='On'):
         self.objConnection.Send(Message=createISCPFrame(MESSAGE_MUTE+'00'))
         #Unmute
