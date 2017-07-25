@@ -3,7 +3,7 @@
 # Author: jorgh
 #
 """
-<plugin key="Onkyo" name="Onkyo AV Receiver" author="jorgh" version="0.2.0" wikilink="https://github.com/jorgh6/domoticz-onkyo-plugin/wiki" externallink="https://github.com/jorgh6/domoticz-onkyo-plugin">
+<plugin key="Onkyo" name="Onkyo AV Receiver" author="jorgh" version="0.2.1" wikilink="https://github.com/jorgh6/domoticz-onkyo-plugin/wiki" externallink="https://github.com/jorgh6/domoticz-onkyo-plugin">
   <params>
     <param field="Mode6" label="Debug" width="75px">
       <options>
