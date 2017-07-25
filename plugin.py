@@ -117,7 +117,7 @@ class Onkyo:
         strVolume = hex(int((self.intMainMaxVolume/100)*Level))[2:]
         if len(strVolume) == 1:
           strVolume = '0'+strVolume
-        self.ObjConnection.Send(Message=createISCPFrame(MESSAGE_VOLUME+strVolume))
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_VOLUME+strVolume))
       if (Command=='On'):
         self.objConnection.Send(Message=createISCPFrame(MESSAGE_MUTE+'00'))
         #Unmute
