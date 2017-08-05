@@ -3,7 +3,7 @@
 # Author: jorgh
 #
 """
-<plugin key="Onkyo" name="Onkyo AV Receiver" author="jorgh" version="0.2.1" wikilink="https://github.com/jorgh6/domoticz-onkyo-plugin/wiki" externallink="https://github.com/jorgh6/domoticz-onkyo-plugin">
+<plugin key="Onkyo" name="Onkyo AV Receiver" author="jorgh" version="0.2.2" wikilink="https://github.com/jorgh6/domoticz-onkyo-plugin/wiki" externallink="https://github.com/jorgh6/domoticz-onkyo-plugin">
   <params>
     <param field="Mode6" label="Debug" width="75px">
       <options>
@@ -22,18 +22,31 @@ import xml.etree.ElementTree as XMLTree
 MESSAGE_HEADER_1 = 'ISCP\x00\x00\x00\x10\x00\x00\x00'
 MESSAGE_HEADER_2 = '\x01\x00\x00\x00'
 MESSAGE_TRAILER = '\x0D\x0A'
-MESSAGE_POWER = '!1PWR'
-MESSAGE_MUTE = '!1AMT'
-MESSAGE_MUTE2 = '!1ZMT'
-MESSAGE_POWER2 = '!1ZPW'
-MESSAGE_VOLUME = '!1MVL'
-MESSAGE_VOLUME2 = '!1ZVL'
-MESSAGE_SOURCE = '!1SLI'
-MESSAGE_SOURCE2 = '!1SLZ'
-MESSAGE_LISTENINGMODE = '!1LMD' 
-MESSAGE_TUNERPRESET = '!1PRS'
 MESSAGE_DISCOVER = '!xECNQSTN'
 MESSAGE_RECEIVER_INFORMATION = '!1NRIQSTN'
+
+MESSAGE_POWER = '!1PWR'
+MESSAGE_MUTE = '!1AMT'
+MESSAGE_VOLUME = '!1MVL'
+MESSAGE_SOURCE = '!1SLI'
+MESSAGE_LISTENINGMODE = '!1LMD'
+MESSAGE_TUNERPRESET = '!1PRS'
+
+MESSAGE_POWER2 = '!1ZPW'
+MESSAGE_MUTE2 = '!1ZMT'
+MESSAGE_VOLUME2 = '!1ZVL'
+MESSAGE_SOURCE2 = '!1SLZ'
+
+MESSAGE_POWER3 = '!1PW3'
+MESSAGE_MUTE3 = '!1MT3'
+MESSAGE_VOLUME3 = '!1VL3'
+MESSAGE_SOURCE3 = '!1SL3'
+
+MESSAGE_POWER4 = '!1PW4'
+MESSAGE_MUTE4 = '!1MT4'
+MESSAGE_VOLUME4 = '!1VL4'
+MESSAGE_SOURCE4 = '!1SL4'
+
 BUFFER_SIZE = 4096
 MAINPOWER = 1
 MAINSOURCE = 2
@@ -43,6 +56,13 @@ TUNERPRESETS = 5
 ZONE2POWER = 6
 ZONE2SOURCE = 7
 ZONE2VOLUME = 8
+ZONE3POWER = 9
+ZONE3SOURCE = 10
+ZONE3VOLUME = 11
+ZONE4POWER = 12
+ZONE4SOURCE = 13
+ZONE4VOLUME = 14
+
 UDP_PORT = 60128
 EOF = 23
 NA = -1
@@ -70,6 +90,9 @@ class Onkyo:
     self.XMLRoot = None                      # Used to store the XML configuration data of the reciever
     self.intMainMaxVolume = 80
     self.intZone2MaxVolume = 80
+    self.intZone3MaxVolume = 80
+    self.intZone4MaxVolume = 80
+    self.XMLBuffer = ''
     return
 
   def onStart(self):
@@ -187,7 +210,7 @@ class Onkyo:
 
     if (Unit==ZONE2SOURCE):
       #Zone 2 input Selector
-      dictOptions = Devices[MAINSOURCE].Options
+      dictOptions = Devices[ZONE2SOURCE].Options
       listLevelNames = dictOptions['LevelNames'].split('|')
       strSelectedName = listLevelNames[int(int(Level)/10)]
       Domoticz.Log('Zone 2 Source Selected: '+strSelectedName)
@@ -195,6 +218,70 @@ class Onkyo:
         if (selector.get('name')==strSelectedName):
           strId = selector.get('id').upper()
           self.objConnection.Send(Message=createISCPFrame(MESSAGE_SOURCE2+strId))
+
+    if (Unit==ZONE3POWER):
+      # Zone2 Power
+      if str(Command)=='On':
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_POWER3+'01'))
+      if str(Command)=='Off':
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_POWER3+'00'))
+
+    if (Unit==ZONE3VOLUME):
+      # Zone 3 Volume
+      if (Command=='Set Level'):
+        strVolume = hex(int((self.intZone3MaxVolume/100)*Level))[2:]
+        if len(strVolume) == 1:
+          strVolume = '0'+strVolume
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_VOLUME3+strVolume))
+      if (Command=='On'):
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_MUTE3+'00'))
+        #Unmute
+      if (Command=='Off'):
+        #Mute
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_MUTE3+'01'))
+
+    if (Unit==ZONE3SOURCE):
+      #Zone 3 input Selector
+      dictOptions = Devices[ZONE3SOURCE].Options
+      listLevelNames = dictOptions['LevelNames'].split('|')
+      strSelectedName = listLevelNames[int(int(Level)/10)]
+      Domoticz.Log('Zone 3 Source Selected: '+strSelectedName)
+      for selector in self.XMLRoot.find('device').find('selectorlist'):
+        if (selector.get('name')==strSelectedName):
+          strId = selector.get('id').upper()
+          self.objConnection.Send(Message=createISCPFrame(MESSAGE_SOURCE3+strId))
+
+    if (Unit==ZONE4POWER):
+      # Zone4 Power
+      if str(Command)=='On':
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_POWER4+'01'))
+      if str(Command)=='Off':
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_POWER4+'00'))
+
+    if (Unit==ZONE4VOLUME):
+      # Zone 4 Volume
+      if (Command=='Set Level'):
+        strVolume = hex(int((self.intZone4MaxVolume/100)*Level))[2:]
+        if len(strVolume) == 1:
+          strVolume = '0'+strVolume
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_VOLUME4+strVolume))
+      if (Command=='On'):
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_MUTE4+'00'))
+        #Unmute
+      if (Command=='Off'):
+        #Mute
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_MUTE4+'01'))
+
+    if (Unit==ZONE4SOURCE):
+      #Zone 4 input Selector
+      dictOptions = Devices[ZONE4SOURCE].Options
+      listLevelNames = dictOptions['LevelNames'].split('|')
+      strSelectedName = listLevelNames[int(int(Level)/10)]
+      Domoticz.Log('Zone 4 Source Selected: '+strSelectedName)
+      for selector in self.XMLRoot.find('device').find('selectorlist'):
+        if (selector.get('name')==strSelectedName):
+          strId = selector.get('id').upper()
+          self.objConnection.Send(Message=createISCPFrame(MESSAGE_SOURCE4+strId))
 
   def onNotification(self, Name, Subject, Text, Status, Priority, Sound, ImageFile):
     if (self.blDebug ==  True):
@@ -225,7 +312,8 @@ class Onkyo:
     if (self.blConnectInitiated == False and self.blDiscoverySucces == True):
       self.connect()
     if (self.blConnected==True and self.XMLProcessed==False):
-      self.workAround()
+      Domoticz.Log("Requesting XML configuration")
+      self.objConnection.Send(Message=createISCPFrame(MESSAGE_RECEIVER_INFORMATION))
     if (self.XMLProcessed==True and self.blCheckedDevices == False):
       self.checkDevices()
     if (self.blCheckedDevices == True and self.blCheckedStates == False):
@@ -412,7 +500,83 @@ class Onkyo:
             ' ' + zone.get('name') + " Volume", Unit=ZONE2VOLUME, Type=244, Subtype=73, \
             Switchtype=7, Image=8).Create()
         else:
-          Domoticz.Log("Receiver volume control device exists")
+          Domoticz.Log("Receiver zone 2 volume control device exists")
+
+      if (int(zone.get('id'))==3) and (int(zone.get('value'))==1):
+        # Zone 3
+        Domoticz.Log('Checking Zone 3')
+        intZone3MaxVolume = int(zone.get('volmax'))
+        if (ZONE3POWER not in Devices):
+          Domoticz.Log("Receiver Zone 3 power device does not exist, creating device")
+          Domoticz.Device(Name=(self.XMLRoot.find('device')).find('model').text + \
+            ' '+zone.get('name')+" Power", Unit=ZONE3POWER, TypeName="Switch",  \
+            Image=5).Create()
+        else:
+          Domoticz.Log("Receiver Zone 3 power device exists")
+
+        if (ZONE3SOURCE not in Devices):
+          Domoticz.Log("Receiver input selector Zone 3 device does not exist, creating device")
+          strSelectorNames = 'Off'
+          strSelectorActions = ''
+          for selector in self.XMLRoot.find('device').find('selectorlist'):
+            strSelectorNames += '|' + selector.get('name')
+            strSelectorActions += '|'
+          dictOptions = {"LevelActions": strSelectorActions, \
+                     "LevelNames": strSelectorNames, \
+                     "LevelOffHidden": "true", \
+                     "SelectorStyle": "1"}
+          Domoticz.Device(Name=(self.XMLRoot.find('device')).find('model').text + \
+            ' ' + zone.get('name') + " Source", Unit=ZONE3SOURCE, \
+            TypeName="Selector Switch", Switchtype=18, Image=5, \
+            Options = dictOptions).Create()
+        else:
+          Domoticz.Log("Receiver input selector Zone 3 device exists")
+
+        if (ZONE3VOLUME not in Devices):
+          Domoticz.Log("Receiver Zone 3 volume control device does not exist, creating device")
+          Domoticz.Device(Name=(self.XMLRoot.find('device')).find('model').text + \
+            ' ' + zone.get('name') + " Volume", Unit=ZONE3VOLUME, Type=244, Subtype=73, \
+            Switchtype=7, Image=8).Create()
+        else:
+          Domoticz.Log("Receiver zone 3 volume control device exists")
+
+      if (int(zone.get('id'))==4) and (int(zone.get('value'))==1):
+        # Zone 4
+        Domoticz.Log('Checking Zone 4')
+        intZone4MaxVolume = int(zone.get('volmax'))
+        if (ZONE4POWER not in Devices):
+          Domoticz.Log("Receiver Zone 4 power device does not exist, creating device")
+          Domoticz.Device(Name=(self.XMLRoot.find('device')).find('model').text + \
+            ' '+zone.get('name')+" Power", Unit=ZONE4POWER, TypeName="Switch",  \
+            Image=5).Create()
+        else:
+          Domoticz.Log("Receiver Zone 4 power device exists")
+
+        if (ZONE4SOURCE not in Devices):
+          Domoticz.Log("Receiver input selector Zone 4 device does not exist, creating device")
+          strSelectorNames = 'Off'
+          strSelectorActions = ''
+          for selector in self.XMLRoot.find('device').find('selectorlist'):
+            strSelectorNames += '|' + selector.get('name')
+            strSelectorActions += '|'
+          dictOptions = {"LevelActions": strSelectorActions, \
+                     "LevelNames": strSelectorNames, \
+                     "LevelOffHidden": "true", \
+                     "SelectorStyle": "1"}
+          Domoticz.Device(Name=(self.XMLRoot.find('device')).find('model').text + \
+            ' ' + zone.get('name') + " Source", Unit=ZONE4SOURCE, \
+            TypeName="Selector Switch", Switchtype=18, Image=5, \
+            Options = dictOptions).Create()
+        else:
+          Domoticz.Log("Receiver input selector Zone 4 device exists")
+
+        if (ZONE4VOLUME not in Devices):
+          Domoticz.Log("Receiver Zone 4 volume control device does not exist, creating device")
+          Domoticz.Device(Name=(self.XMLRoot.find('device')).find('model').text + \
+            ' ' + zone.get('name') + " Volume", Unit=ZONE4VOLUME, Type=244, Subtype=73, \
+            Switchtype=7, Image=8).Create()
+        else:
+          Domoticz.Log("Receiver zone 4 volume control device exists")
 
     self.blCheckedDevices = True
 
@@ -427,6 +591,15 @@ class Onkyo:
         self.objConnection.Send(Message=createISCPFrame(MESSAGE_POWER2+'QSTN'), Delay=5)
         self.objConnection.Send(Message=createISCPFrame(MESSAGE_VOLUME2+'QSTN'), Delay=6)
         self.objConnection.Send(Message=createISCPFrame(MESSAGE_SOURCE2+'QSTN'), Delay=7)
+      if (int(zone.get('id'))==3) and (int(zone.get('value'))==1):
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_POWER3+'QSTN'), Delay=8)
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_VOLUME3+'QSTN'), Delay=9)
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_SOURCE3+'QSTN'), Delay=10)
+      if (int(zone.get('id'))==4) and (int(zone.get('value'))==1):
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_POWER4+'QSTN'), Delay=11)
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_VOLUME4+'QSTN'), Delay=12)
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_SOURCE4+'QSTN'), Delay=13)
+
     self.blCheckedStates = True
     
 
@@ -435,22 +608,7 @@ class Onkyo:
       Domoticz.Log("Connecting to Receiver")
     self.objConnection = Domoticz.Connection(Name="Onkyo Connection", Transport="TCP/IP", Protocol="NONE", Address=self.strIPAddress, Port=self.strPort)
     self.objConnection.Connect()
-#    Domoticz.Transport(Transport="TCP/IP", Address=self.strIPAddress, Port=self.strPort)
-#    Domoticz.Protocol("None")
-#    Domoticz.Connect()
     self.blConnectInitiated =  True
-
-  def workAround(self):
-    Domoticz.Log("Loading XML from file")
-    self.objConnection.Send(Message=createISCPFrame(MESSAGE_RECEIVER_INFORMATION))
-    try: 
-      f = open('XMLDataFile.xml', 'r')            # We do exactly the same here as in the processeISCPFrame function
-      strXML = f.read()                           # However, now it does not cause Domoticz to lock up
-      f.close()                                   # Only difference is that this function is called from onHeartbeat
-      self.XMLRoot = XMLTree.fromstring(strXML)   # And the other from onMessage
-      self.XMLProcessed=True                      # If anyone knows what causes this behaviour, drop me a line
-    except:
-      Domoticz.Log("XML file does not yet exist")
 
   def checkInputBuffer(self):
     intStartOfFrame = self.bInputBuffer.find(b'ISCP')
@@ -495,7 +653,8 @@ class Onkyo:
       if (self.blDebug ==  True):
         Domoticz.Log('eISCP Message: ' + streISCPMessage)
       self.bInputBuffer = self.bInputBuffer[16+intDataSize:]  # Remove this frame from the InputBuffer
-      if (streISCPData=='!1PWR'):
+
+      if (streISCPData==MESSAGE_POWER):
         #Main Zone Power
         if streISCPMessage=='01':
           #Power On
@@ -503,14 +662,14 @@ class Onkyo:
         if streISCPMessage=='00':
           # Power Off
           UpdateDevice(MAINPOWER, 0, "Off")
-      if (streISCPData=='!1AMT'):
+      if (streISCPData==MESSAGE_MUTE):
         if streISCPMessage=='01':
           #Mute
           UpdateDevice(MAINVOLUME, 0, "Off")
         if streISCPMessage=='00':
           #Unmute
           UpdateDevice(MAINVOLUME, 1, "On")
-      if (streISCPData=='!1MVL'):
+      if (streISCPData==MESSAGE_VOLUME):
         if streISCPMessage == 'N/A':
           intVolume = NA
         else:
@@ -518,29 +677,30 @@ class Onkyo:
         if (intVolume != NA):
           Domoticz.Log('Volume: '+str(intVolume))
           UpdateDevice(MAINVOLUME,2,str(intVolume))
-      if (streISCPData=='!1SLI'):
+      if (streISCPData==MESSAGE_SOURCE):
         if (self.blDebug ==  True):
           Domoticz.Log('Source: '+streISCPMessage)
         for selector in self.XMLRoot.find('device').find('selectorlist'):
           if (selector.get('id').upper() == streISCPMessage.upper()):
             Domoticz.Log('Current Source: '+selector.get('name'))
             setSelectorByName(MAINSOURCE, selector.get('name'))
-      if (streISCPData=='!1ZPW'):
-        #Main Zone Power
+
+      if (streISCPData==MESSAGE_POWER2):
+        #Zone 2 Power
         if streISCPMessage=='01':
           #Power On
           UpdateDevice(ZONE2POWER, 1, "On")
         if streISCPMessage=='00':
           # Power Off
           UpdateDevice(ZONE2POWER, 0, "Off")
-      if (streISCPData=='!1ZMT'):
+      if (streISCPData==MESSAGE_MUTE2):
         if streISCPMessage=='01':
-          #Mute
+          #Mute zone 2
           UpdateDevice(ZONE2VOLUME, 0, "Off")
         if streISCPMessage=='00':
-          #Unmute
+          #Unmute zone 2
           UpdateDevice(ZONE2VOLUME, 1, "On")
-      if (streISCPData=='!1ZVL'):
+      if (streISCPData==MESSAGE_VOLUME2):
         if streISCPMessage == 'N/A':
           intVolume = NA
         else:
@@ -548,14 +708,77 @@ class Onkyo:
         if (intVolume != NA):
           Domoticz.Log('Zone2 volume: '+str(intVolume))
           UpdateDevice(ZONE2VOLUME,2,str(intVolume))
-      if (streISCPData=='!1SLZ'):
+      if (streISCPData==MESSAGE_SOURCE2):
         if (self.blDebug ==  True):
           Domoticz.Log('Zone 2 source: '+streISCPMessage)
         for selector in self.XMLRoot.find('device').find('selectorlist'):
           if (selector.get('id').upper() == streISCPMessage.upper()):
             Domoticz.Log('Zone 2 Current Source: '+selector.get('name'))
             setSelectorByName(ZONE2SOURCE, selector.get('name'))
-      if (streISCPData=='!1PRS'):
+
+      if (streISCPData==MESSAGE_POWER3):
+        #Zone 3 Power
+        if streISCPMessage=='01':
+          #Power On
+          UpdateDevice(ZONE3POWER, 1, "On")
+        if streISCPMessage=='00':
+          # Power Off
+          UpdateDevice(ZONE3POWER, 0, "Off")
+      if (streISCPData==MESSAGE_MUTE3):
+        if streISCPMessage=='01':
+          #Mute zone 3
+          UpdateDevice(ZONE3VOLUME, 0, "Off")
+        if streISCPMessage=='00':
+          #Unmute zone 3
+          UpdateDevice(ZONE3VOLUME, 1, "On")
+      if (streISCPData==MESSAGE_VOLUME3):
+        if streISCPMessage == 'N/A':
+          intVolume = NA
+        else:
+          intVolume = int(int('0x'+streISCPMessage, 16)*(100/self.intZone3MaxVolume))
+        if (intVolume != NA):
+          Domoticz.Log('Zone3 volume: '+str(intVolume))
+          UpdateDevice(ZONE3VOLUME,2,str(intVolume))
+      if (streISCPData==MESSAGE_SOURCE3):
+        if (self.blDebug ==  True):
+          Domoticz.Log('Zone 3 source: '+streISCPMessage)
+        for selector in self.XMLRoot.find('device').find('selectorlist'):
+          if (selector.get('id').upper() == streISCPMessage.upper()):
+            Domoticz.Log('Zone 3 Current Source: '+selector.get('name'))
+            setSelectorByName(ZONE3SOURCE, selector.get('name'))
+ 
+      if (streISCPData==MESSAGE_POWER4):
+        #Zone 4 Power
+        if streISCPMessage=='01':
+          #Power On
+          UpdateDevice(ZONE4POWER, 1, "On")
+        if streISCPMessage=='00':
+          # Power Off
+          UpdateDevice(ZONE4POWER, 0, "Off")
+      if (streISCPData==MESSAGE_MUTE3):
+        if streISCPMessage=='01':
+          #Mute zone 4
+          UpdateDevice(ZONE4VOLUME, 0, "Off")
+        if streISCPMessage=='00':
+          #Unmute zone 4
+          UpdateDevice(ZONE4VOLUME, 1, "On")
+      if (streISCPData==MESSAGE_VOLUME4):
+        if streISCPMessage == 'N/A':
+          intVolume = NA
+        else:
+          intVolume = int(int('0x'+streISCPMessage, 16)*(100/self.intZone4MaxVolume))
+        if (intVolume != NA):
+          Domoticz.Log('Zone4 volume: '+str(intVolume))
+          UpdateDevice(ZONE4VOLUME,2,str(intVolume))
+      if (streISCPData==MESSAGE_SOURCE4):
+        if (self.blDebug ==  True):
+          Domoticz.Log('Zone 4 source: '+streISCPMessage)
+        for selector in self.XMLRoot.find('device').find('selectorlist'):
+          if (selector.get('id').upper() == streISCPMessage.upper()):
+            Domoticz.Log('Zone 4 Current Source: '+selector.get('name'))
+            setSelectorByName(ZONE4SOURCE, selector.get('name'))
+
+      if (streISCPData==MESSAGE_TUNERPRESET):
         if (self.blDebug ==  True):
           Domoticz.Log('Preset: '+streISCPMessage)
         for preset in self.XMLRoot.find('device').find('presetlist'):
@@ -563,7 +786,7 @@ class Onkyo:
             strPresetName = str(int('0x'+preset.get('id'),16))+' '+preset.get('name')
             setSelectorByName(TUNERPRESETS, strPresetName)
 
-      if (streISCPData=='!1LMD'):
+      if (streISCPData==MESSAGE_LISTENINGMODE):
         if (self.blDebug ==  True):
           Domoticz.Log('Listening mode: '+streISCPMessage)
         if (streISCPMessage != 'N/A'):
@@ -584,15 +807,9 @@ class Onkyo:
       if (streISCPData=='!1NRI'):
         # We should now have the XML
         Domoticz.Log('Received XML')
-        strXML = streISCPMessage[streISCPMessage.find('<'):streISCPMessage.rfind('>')+1]
-        # self.XMLRoot = XMLTree.fromstring(strXML) # <-- This statement causes Domoticz to lock up, don´t know why
-        f = open('XMLDataFile.xml', 'w')            # So instead I write it to a file
-        f.write(strXML)
-        f.close()
-        #f = open('XMLDataFile.xml', 'r')           # Even if I read it from the file, it causes a lock up here.
-        #strXML2 = f.read()                         # However I do the same in the workaround, and then it does not lock up
-        #f.close()                                  # If anyone knows what causes this behaviour, drop me a line
-        #self.XMLRoot = XMLTree.fromstring(strXML2) # <-- This statement causes Domoticz to lock up
+        self.XMLBuffer = streISCPMessage[streISCPMessage.find('<'):streISCPMessage.rfind('>')+1]
+        self.XMLRoot = XMLTree.fromstring(self.XMLBuffer)
+        self.XMLProcessed=True
         #self.ProcessXML()
     else:
       if (self.blDebug ==  True):
