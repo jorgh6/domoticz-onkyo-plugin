@@ -3,7 +3,7 @@
 # Author: jorgh
 #
 """
-<plugin key="Onkyo" name="Onkyo AV Receiver" author="jorgh" version="0.2.2" wikilink="https://github.com/jorgh6/domoticz-onkyo-plugin/wiki" externallink="https://github.com/jorgh6/domoticz-onkyo-plugin">
+<plugin key="Onkyo" name="Onkyo AV Receiver" author="jorgh" version="0.2.3" wikilink="https://github.com/jorgh6/domoticz-onkyo-plugin/wiki" externallink="https://github.com/jorgh6/domoticz-onkyo-plugin">
   <params>
     <param field="Mode6" label="Debug" width="75px">
       <options>
@@ -113,7 +113,7 @@ class Onkyo:
       Domoticz.Log("onConnect called")
     self.blConnected = True                 # We are now connected
 
-  def onMessage(self, Connection, Data, Status, Extra):
+  def onMessage(self, Connection, Data):
     if (self.blDebug ==  True):
       Domoticz.Log("onMessage called")
       Domoticz.Log("We received "+str(len(Data))+" bytes of data")
@@ -855,9 +855,9 @@ def onConnect(Connection, Status, Description):
     global _plugin
     _plugin.onConnect(Connection, Status, Description)
 
-def onMessage(Connection, Data, Status, Extra):
+def onMessage(Connection, Data):
     global _plugin
-    _plugin.onMessage(Connection, Data, Status, Extra)
+    _plugin.onMessage(Connection, Data)
 
 def onCommand(Unit, Command, Level, Hue):
     global _plugin
