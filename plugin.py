@@ -3,7 +3,7 @@
 # Author: jorgh
 #
 """
-<plugin key="Onkyo" name="Onkyo AV Receiver" author="jorgh" version="0.2.3" wikilink="https://github.com/jorgh6/domoticz-onkyo-plugin/wiki" externallink="https://github.com/jorgh6/domoticz-onkyo-plugin">
+<plugin key="Onkyo" name="Onkyo AV Receiver" author="jorgh" version="0.2.4" wikilink="https://github.com/jorgh6/domoticz-onkyo-plugin/wiki" externallink="https://github.com/jorgh6/domoticz-onkyo-plugin">
   <params>
     <param field="Mode6" label="Debug" width="75px">
       <options>
@@ -64,7 +64,7 @@ ZONE4SOURCE = 13
 ZONE4VOLUME = 14
 
 UDP_PORT = 60128
-EOF = 23
+EOF = 26
 NA = -1
 
 class Onkyo:
@@ -649,7 +649,7 @@ class Onkyo:
       streISCPData = self.bInputBuffer[16:21].decode(encoding="ascii", errors="ignore")
       if (self.blDebug ==  True):
         Domoticz.Log('eISCP Data : ' + streISCPData)
-      streISCPMessage = self.bInputBuffer[21: self.bInputBuffer[21:].find(EOF)-2].decode(encoding="ascii", errors="ignore")
+      streISCPMessage = self.bInputBuffer[21: self.bInputBuffer[21:].find(EOF)+21].decode(encoding="ascii", errors="ignore")
       if (self.blDebug ==  True):
         Domoticz.Log('eISCP Message: ' + streISCPMessage)
       self.bInputBuffer = self.bInputBuffer[16+intDataSize:]  # Remove this frame from the InputBuffer
