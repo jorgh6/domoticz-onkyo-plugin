@@ -3,7 +3,7 @@
 # Author: jorgh
 #
 """
-<plugin key="Onkyo" name="Onkyo AV Receiver" author="jorgh" version="0.2.4" wikilink="https://github.com/jorgh6/domoticz-onkyo-plugin/wiki" externallink="https://github.com/jorgh6/domoticz-onkyo-plugin">
+<plugin key="Onkyo" name="Onkyo AV Receiver" author="jorgh" version="0.2.5" wikilink="https://github.com/jorgh6/domoticz-onkyo-plugin/wiki" externallink="https://github.com/jorgh6/domoticz-onkyo-plugin">
   <params>
     <param field="Mode6" label="Debug" width="75px">
       <options>
@@ -167,10 +167,17 @@ class Onkyo:
       strSelectedName = listLevelNames[int(int(Level)/10)]
       if (self.blDebug ==  True):
         Domoticz.Log('Main Listening Mode Selected: '+strSelectedName)
+      strCode = None
       for selector in self.XMLRoot.find('device').find('controllist'):
         if (selector.get('id')=='LMD '+strSelectedName):
           strCode = selector.get('code')
-          self.objConnection.Send(Message=createISCPFrame(MESSAGE_LISTENINGMODE+strCode))
+      if (strCode == None):
+         Domoticz.Log('Trying discovered listening modes')
+         strCode = strSelectedName[strSelectedName.find('[')+1:]
+         strCode = strCode[:strCode.find(']')]
+         Domoticz.Log('Found: '+strCode)
+      if strCode != None:
+        self.objConnection.Send(Message=createISCPFrame(MESSAGE_LISTENINGMODE+strCode))
 
     if (Unit==TUNERPRESETS):
       #Tuner Preset Selector
