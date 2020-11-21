@@ -3,7 +3,7 @@
 # Author: jorgh
 #
 """
-<plugin key="Onkyo" name="Onkyo AV Receiver" author="jorgh" version="0.2.1" wikilink="https://github.com/jorgh6/domoticz-onkyo-plugin/wiki" externallink="https://github.com/jorgh6/domoticz-onkyo-plugin">
+<plugin key="Onkyo" name="Onkyo AV Receiver" author="jorgh" version="0.2.2" wikilink="https://github.com/jorgh6/domoticz-onkyo-plugin/wiki" externallink="https://github.com/jorgh6/domoticz-onkyo-plugin">
   <params>
     <param field="Mode6" label="Debug" width="75px">
       <options>
@@ -60,7 +60,7 @@ class Onkyo:
     self.XMLProcessed = False                # Have we processed the XML
     self.blCheckedDevices = False            # Have the Domoticz devices been checked
     self.blCheckedStates = False             # Have we fetched the state after startup
-    self.blInitDone = False                  # Has the initialization proces completed
+    self.blInitDone = False                  # Has the initialization process completed
     self.sockUDP = ''                        # Used for storing the UDP socket
     self.strIPAddress = ''                   # The IP address of the Onkyo Receiver
     self.strPort = ''                        # Contains the TCP port number to connect to
@@ -79,7 +79,7 @@ class Onkyo:
     
     if (self.blDebug ==  True):
       Domoticz.Log("Onkyo: onStart called")
-    Domoticz.Heartbeat(2)                   # Lower hartbeat interval, to speed up the initialization. 
+    Domoticz.Heartbeat(2)                   # Lower heartbeat interval, to speed up the initialization. 
 
   def onStop(self):
     if (self.blDebug ==  True):
@@ -165,7 +165,7 @@ class Onkyo:
       self.objConnection.Send(Message=createISCPFrame(MESSAGE_TUNERPRESET+strTunerPreset))
 
     if (Unit==ZONE2POWER):
-      # Zone2 Power
+      # Zone 2 Power
       if str(Command)=='On':
         self.objConnection.Send(Message=createISCPFrame(MESSAGE_POWER2+'01'))
       if str(Command)=='Off':
@@ -501,7 +501,7 @@ class Onkyo:
           #Power On
           UpdateDevice(MAINPOWER, 1, "On")
         if streISCPMessage=='00':
-          # Power Off
+          #Power Off
           UpdateDevice(MAINPOWER, 0, "Off")
       if (streISCPData=='!1AMT'):
         if streISCPMessage=='01':
